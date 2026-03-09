@@ -1,26 +1,40 @@
 import speech_recognition as sr
 import pyttsx3
-import webbrowser
 from translate import Translator
 
 engine = pyttsx3.init()
 engine.setProperty('rate', 150)
 engine.setProperty('volume', 1.0)
 
-def recognize(msg = "something"):
+def speak(text):
+    engine.say(text)
+    engine.runAndWait()
+
+def recognize():
     r = sr.Recognizer()
     with sr.Microphone() as source:
+        print("Speak...")
         audio = r.listen(source)
+
         try:
-            recognised_text = r.recognize_google (audio, language='en-US')
-            print(recognised_text)
-            return recognised_text.lower()
+            text = r.recognize_google(audio, language='en-US')
+            print("You said:", text)
+            return text
         except sr.UnknownValueError:
-            print("Google Speech Recognition could not understand audio")
-        except sr.RequestError as e:
-            print("Could not request results from Google Speech Recognition service; {0}",e)
+            print("Could not understand audio")
+            return ""
+        except sr.RequestError:
+            print("Speech service error")
+            return ""
 
+# распознаем речь
 text = recognize()
-word_list = text.split()
-translator = Translator()
 
+# перевод
+translator = Translator(from_lang="en", to_lang="ru")
+translation = translator.translate(text)
+
+print("Translation:", translation)
+
+# озвучиваем перевод
+speak(translation)
