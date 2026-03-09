@@ -27,14 +27,11 @@ def recognize():
             print("Speech service error")
             return ""
 
-# распознаем речь
 text = recognize()
 
-# перевод
 translator = Translator(from_lang="en", to_lang="ru")
 translation = translator.translate(text)
 
 print("Translation:", translation)
 
-# озвучиваем перевод
 speak(translation)
