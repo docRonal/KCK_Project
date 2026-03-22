@@ -15,14 +15,17 @@ class Lmarks(Enum):
     RIGHT_HIP = 7
 
 
-def calculate_angle(shoulder, elbow, wrist, w, h):
+def calculate_angle(hip, shoulder, elbow, w, h):
+    hp_arr = np.array([hip.x * w, hip.y * h])
     sh_arr = np.array([shoulder.x * w, shoulder.y * h])
     el_arr = np.array([elbow.x * w, elbow.y * h])
-    wr_arr = np.array([wrist.x * w, wrist.y * h])
-    radians = np.arctan2(wr_arr[1] - el_arr[1], wr_arr[0] - el_arr[0]) - np.arctan2(
-        sh_arr[1] - el_arr[1], sh_arr[0] - el_arr[0]
+
+    radians = np.arctan2(el_arr[1] - sh_arr[1], el_arr[0] - sh_arr[0]) - np.arctan2(
+        hp_arr[1] - sh_arr[1], hp_arr[0] - sh_arr[0]
     )
+
     angle = np.abs(radians * 180.0 / np.pi)
+
     if angle > 180:
         angle = 360 - angle
     return angle
