@@ -39,14 +39,17 @@ def detect_letter(rangle, langle):
 
 
 def main():
+    current_letter = "None"
+    display_counter = 0
+    CONFIRM_FRAMES = 15
     mp_pose = mp.solutions.pose
     mp_drawing = mp.solutions.drawing_utils
 
     pose_model = mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5)
 
     cap = cv2.VideoCapture(0)
-    width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
-    height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
+    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     if not cap.isOpened():
         exit()
 
@@ -90,8 +93,27 @@ def main():
             l_visible = required_landmarks[Lmarks.LEFT_WRIST.value].visibility > 0.5
             r_visible = required_landmarks[Lmarks.RIGHT_WRIST.value].visibility > 0.5
             res = detect_letter(right_angle, left_angle)
+
             if l_visible and r_visible:
-                print(right_angle, left_angle, res)
+                if res != "None":
+                    current_letter = res
+                    display_counter = CONFIRM_FRAMES
+                else:
+                    if display_counter > 0:
+                        display_counter -= 1
+                    else:
+                        current_letter = "None"
+                if current_letter != "None":
+                    cv2.putText(
+                        frame,
+                        f"{current_letter}",
+                        (50, 100),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        4,
+                        (100, 50, 140),
+                        5,
+                    )
+
         cv2.imshow("Vebcam view", frame)
         if cv2.waitKey(1) & 0xFF == ord("q"):
             break
