@@ -1,12 +1,104 @@
 import cv2
 import mediapipe as mp
+import numpy as np
+from enum import Enum
 
-mp_pose = mp.solutions.pose
-mp_drawing = mp.solutions.drawing_utils
-cap = cv2.VideoCapture("film.mp4")
-pose = mp_pose.Pose()
-_, frame = cap.read()
-results = pose.process(frame)
-landmarks = results.pose_landmarks.landmark
-ramie_lewe = landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER]
 
+class Lmarks(Enum):
+    LEFT_SHOULDER = 0
+    RIGHT_SHOULDER = 1
+    LEFT_ELBOW = 2
+    RIGHT_ELBOW = 3
+    LEFT_WRIST = 4
+    RIGHT_WRIST = 5
+    LEFT_HIP = 6
+    RIGHT_HIP = 7
+
+
+def calculate_angle(shoulder, elbow, wrist, w, h):
+    sh_arr = np.array([shoulder.x * w, shoulder.y * h])
+    el_arr = np.array([elbow.x * w, elbow.y * h])
+    wr_arr = np.array([wrist.x * w, wrist.y * h])
+    radians = np.arctan2(wr_arr[1] - el_arr[1], wr_arr[0] - el_arr[0]) - np.arctan2(
+        sh_arr[1] - el_arr[1], sh_arr[0] - el_arr[0]
+    )
+    angle = np.abs(radians * 180.0 / np.pi)
+    if angle > 180:
+        angle = 360 - angle
+    return angle
+
+
+def detect_letter(rangle, langle):
+    abc = {"T": [90, 90], "I": [5, 5], "L": [170, 90], "Y": [135, 135]}
+    tolerance = 10
+    for key, value in abc.items():
+        if abs(rangle - value[0]) < tolerance and abs(langle - value[1]) < tolerance:
+            return key
+
+    return "None"
+
+
+def main():
+    mp_pose = mp.solutions.pose
+    mp_drawing = mp.solutions.drawing_utils
+
+    pose_model = mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5)
+
+    cap = cv2.VideoCapture(0)
+    width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
+    height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
+    if not cap.isOpened():
+        exit()
+
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            break
+
+        rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        results = pose_model.process(rgb_frame)
+
+        if results.pose_landmarks:
+            mp_drawing.draw_landmarks(
+                frame, results.pose_landmarks, mp_pose.POSE_CONNECTIONS
+            )
+            landmarks = results.pose_landmarks.landmark
+            required_landmarks = [
+                landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER],
+                landmarks[mp_pose.PoseLandmark.RIGHT_SHOULDER],
+                landmarks[mp_pose.PoseLandmark.LEFT_ELBOW],
+                landmarks[mp_pose.PoseLandmark.RIGHT_ELBOW],
+                landmarks[mp_pose.PoseLandmark.LEFT_WRIST],
+                landmarks[mp_pose.PoseLandmark.RIGHT_WRIST],
+                landmarks[mp_pose.PoseLandmark.LEFT_HIP],
+                landmarks[mp_pose.PoseLandmark.RIGHT_HIP],
+            ]
+            left_angle = calculate_angle(
+                required_landmarks[Lmarks.LEFT_HIP.value],
+                required_landmarks[Lmarks.LEFT_SHOULDER.value],
+                required_landmarks[Lmarks.LEFT_ELBOW.value],
+                width,
+                height,
+            )
+            right_angle = calculate_angle(
+                required_landmarks[Lmarks.RIGHT_HIP.value],
+                required_landmarks[Lmarks.RIGHT_SHOULDER.value],
+                required_landmarks[Lmarks.RIGHT_ELBOW.value],
+                width,
+                height,
+            )
+            l_visible = required_landmarks[Lmarks.LEFT_WRIST.value].visibility > 0.5
+            r_visible = required_landmarks[Lmarks.RIGHT_WRIST.value].visibility > 0.5
+            res = detect_letter(right_angle, left_angle)
+            if l_visible and r_visible:
+                print(right_angle, left_angle, res)
+        cv2.imshow("Vebcam view", frame)
+        if cv2.waitKey(1) & 0xFF == ord("q"):
+            break
+
+    cap.release()
+    cv2.destroyAllWindows()
+
+
+if __name__ == "__main__":
+    main()
