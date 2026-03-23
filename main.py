@@ -50,7 +50,7 @@ def main():
 
     pose_model = mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5)
 
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture("film2.mp4")
     width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     if not cap.isOpened():
