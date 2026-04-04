@@ -18,7 +18,7 @@ def calculate_angle(a, b, c):
 
 cap = cv2.VideoCapture(0)
 
-# Переменные состояния
+
 counter = 0
 stage = None
 feedback = "Good"
@@ -34,42 +34,35 @@ while cap.isOpened():
     try:
         landmarks = results.pose_landmarks.landmark
         
-        # Точки для выпада (нога)
         hip = [landmarks[mp_pose.PoseLandmark.LEFT_HIP.value].x, landmarks[mp_pose.PoseLandmark.LEFT_HIP.value].y]
         knee = [landmarks[mp_pose.PoseLandmark.LEFT_KNEE.value].x, landmarks[mp_pose.PoseLandmark.LEFT_KNEE.value].y]
         ankle = [landmarks[mp_pose.PoseLandmark.LEFT_ANKLE.value].x, landmarks[mp_pose.PoseLandmark.LEFT_ANKLE.value].y]
         
-        # Точки для спины (осанка)
         shoulder = [landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER.value].x, landmarks[mp_pose.PoseLandmark.LEFT_SHOULDER.value].y]
-        # Виртуальная точка строго над бедром для замера вертикали
         virtual_vertical = [hip[0], 0] 
 
-        # Расчет углов
         knee_angle = calculate_angle(hip, knee, ankle)
         back_angle = calculate_angle(shoulder, hip, virtual_vertical)
 
-        # Проверка осанки (если наклон спины больше 20 градусов)
+     
         if back_angle > 20:
             feedback = "Keep your back straight!"
-            color = (0, 0, 255) # Красный
+            color = (0, 0, 255)
         else:
             feedback = "Good posture"
-            color = (0, 255, 0) # Зеленый
+            color = (0, 255, 0) 
 
-        # Логика счетчика
         if knee_angle < 100:
             stage = "down"
         if knee_angle > 150 and stage == 'down':
             stage = "up"
             counter += 1
 
-        # Визуализация фидбека по спине
         cv2.putText(image, feedback, (10, 120), cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2, cv2.LINE_AA)
             
     except:
         pass
 
-    # Отрисовка UI
     cv2.rectangle(image, (0,0), (250, 80), (245, 117, 16), -1)
     cv2.putText(image, f'REPS: {counter}', (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,255,255), 2)
     cv2.putText(image, f'STAGE: {stage}', (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255,255,255), 1)
