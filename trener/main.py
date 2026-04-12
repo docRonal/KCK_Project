@@ -2,7 +2,34 @@ import cv2
 import mediapipe as mp
 import numpy as np
 from enum import Enum
+import pyttsx3
+import threading
 
+is_speaking = False
+
+def tts_task(text):
+    global is_speaking
+    try:
+        import pythoncom
+        pythoncom.CoInitialize()
+    except ImportError:
+        pass
+        
+    try:
+        engine = pyttsx3.init()
+        engine.setProperty('rate', 160)
+        engine.say(text)
+        engine.runAndWait()
+    except Exception as e:
+        print(f"Audio Error: {e}")
+    finally:
+        is_speaking = False
+
+def speak(text):
+    global is_speaking
+    if not is_speaking:
+        is_speaking = True
+        threading.Thread(target=tts_task, args=(text,), daemon=True).start()
 
 class USER_POSE(Enum):
     UP = 0
@@ -11,7 +38,6 @@ class USER_POSE(Enum):
     NOT_ENOUGH = 3
     UNKNOWN = 4
     UNKNOWN_SIDE = 7
-
 
 def calculate_angle(a, b, c):
     a = np.array(a)
@@ -25,21 +51,21 @@ def calculate_angle(a, b, c):
         angle = 360 - angle
     return angle
 
-
 def check_technique(lka, rka, lha, rha, laa, raa):
     errors = []
     if lka < 80 or rka < 80:
         errors.append("KNEE OVER TOE")
-    if lha < 70 or rha < 70:
+        
+    front_hip = min(lha, rha)
+    
+    if front_hip < 60:
         errors.append("LEANING FORWARD")
-    if 75 < lha < 105 and 75 < rha < 105:
-        pass
-    elif (lha > 110 or rha > 110) and (lha < 160 or rha < 160):
+    elif front_hip > 135:
         errors.append("BACK NOT STRAIGHT")
+        
     if laa < 75 or raa < 75:
         errors.append("HEEL LIFTED")
     return errors
-
 
 def detect_side(lha, rha, t):
     if abs(90 - lha) < t and abs(180 - rha) < t:
@@ -47,7 +73,6 @@ def detect_side(lha, rha, t):
     elif abs(180 - lha) < t and abs(90 - rha) < t:
         return "r"
     return "n"
-
 
 def detect_pose(lka, rka, lha, rha):
     up_tol = 15
@@ -62,11 +87,10 @@ def detect_pose(lka, rka, lha, rha):
     if lka < 65 or rka < 65:
         return USER_POSE.TOO_DEEP.value
 
-    if (65 < lka < 160) or (65 < rka < 160):
+    if (65 < lka < 160) and (65 < rka < 160):
         return USER_POSE.NOT_ENOUGH.value
 
     return USER_POSE.UNKNOWN.value
-
 
 def main():
     rep_counter = 0
@@ -74,7 +98,7 @@ def main():
 
     current_confirmed_pose = USER_POSE.UP.value
     pose_tracker = {"last_pose": None, "count": 0}
-    error_tracker = {"current_errors": [], "pending_errors": [], "count": 0}
+    error_tracker = {"current_errors": [], "pending_errors": [], "count": 0, "spoken_errors": []}
     SMOOTH_FRAMES = 3
 
     mp_pose = mp.solutions.pose
@@ -84,6 +108,8 @@ def main():
     )
 
     cap = cv2.VideoCapture(0)
+
+    speak("System ready. Let's start training.")
 
     while cap.isOpened():
         ret, frame = cap.read()
@@ -149,6 +175,13 @@ def main():
 
             if error_tracker["count"] >= SMOOTH_FRAMES:
                 error_tracker["current_errors"] = raw_errors
+                
+                if raw_errors and raw_errors != error_tracker["spoken_errors"]:
+                    error_message = ". ".join(raw_errors)
+                    speak(error_message)
+                    error_tracker["spoken_errors"] = raw_errors
+                elif not raw_errors:
+                    error_tracker["spoken_errors"] = []
 
             cv2.putText(frame, f"REPS: {rep_counter}", (10, 50), 2, 1, (0, 255, 0), 2)
             cv2.putText(
@@ -172,7 +205,6 @@ def main():
 
     cap.release()
     cv2.destroyAllWindows()
-
 
 if __name__ == "__main__":
     main()
