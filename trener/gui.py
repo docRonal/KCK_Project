@@ -2,7 +2,7 @@ import customtkinter as ctk
 import cv2
 from PIL import Image
 import mediapipe as mp
-import numpy as np  # Понадобится для склейки кадров
+import numpy as np
 import os
 from trainer_logic import SquatTrainer
 
@@ -15,7 +15,7 @@ class App(ctk.CTk):
         self.configure(fg_color="#242424")
         self.trainer = SquatTrainer()
 
-        self.cap_front = cv2.VideoCapture(1)
+        # self.cap_front = cv2.VideoCapture(1)
         self.cap_side = cv2.VideoCapture(0)
 
         self.info_label = ctk.CTkLabel(
@@ -48,22 +48,23 @@ class App(ctk.CTk):
         self.protocol("WM_DELETE_WINDOW", self.force_exit)
 
     def update_loop(self):
-        ret_f, frame_f = self.cap_front.read()
+        # ret_f, frame_f = self.cap_front.read()
         ret_s, frame_s = self.cap_side.read()
 
-        if ret_f and ret_s:
-            frame_f = cv2.resize(frame_f, (640, 480))
+        # if ret_f and ret_s:
+        if ret_s:
+            # frame_f = cv2.resize(frame_f, (640, 480))
             frame_s = cv2.resize(frame_s, (640, 480))
-            results, state, errors = self.trainer.process_frame(frame_f)
+            results, state, errors = self.trainer.process_frame(frame_s)
 
             if results and results.pose_landmarks:
                 mp.solutions.drawing_utils.draw_landmarks(
-                    frame_f,
+                    frame_s,
                     results.pose_landmarks,
                     self.trainer.mp_pose.POSE_CONNECTIONS,
                 )
 
-            combined_frame = cv2.hconcat([frame_f, frame_s])
+            combined_frame = cv2.hconcat([frame_s])
 
             self.info_label.configure(
                 text=f"REPS: {state['reps']} | STATE: {state['pose']}"
@@ -88,4 +89,3 @@ class App(ctk.CTk):
 
     def on_closing(self):
         self.force_exit()
-
