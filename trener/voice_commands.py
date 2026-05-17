@@ -46,7 +46,6 @@ class VoiceAssistant:
                 speak("Training is not start")
                 
         elif "ile zostało" in command:
-            # Проверяем, начата ли тренировка
             if self.state.get("is_training"):
                 target = self.state.get("target_reps", 10) 
                 reps = self.state.get("reps", 0)
@@ -56,7 +55,6 @@ class VoiceAssistant:
                 else:
                     speak("Goal!")
             else:
-                # Ответ, если тренировка еще не запущена
                 speak("Trening is not start")
 
     def start(self):
