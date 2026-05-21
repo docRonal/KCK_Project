@@ -27,7 +27,7 @@ def main():
     assistant = VoiceAssistant(state)
     assistant.start()
 
-    speak("System gotowy. Powiedz: zacznij trening.")
+    speak("System gotowy. Powiedz: trening.")
 
     while cap.isOpened() and not state["quit"]: 
         ret, frame = cap.read()
