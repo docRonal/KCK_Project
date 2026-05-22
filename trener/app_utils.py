@@ -10,7 +10,12 @@ from tracker_utils import (
 
 def setup_mediapipe():
     mp_pose = mp.solutions.pose
-    model = mp_pose.Pose(min_detection_confidence=0.5, min_tracking_confidence=0.5)
+    model = mp_pose.Pose(
+        static_image_mode=False,
+        model_complexity=0,  # 0 — самое легкое решение, уберет фризы
+        min_detection_confidence=0.5,
+        min_tracking_confidence=0.5,
+    )
     return model, mp_pose
 
 

@@ -1,28 +1,89 @@
 import cv2
-from tts import speak
-from detection_utils import USER_POSE
-from tracker_utils import process_exercise_logic
-from app_utils import setup_mediapipe, run_analysis
+import mediapipe as mp
+import numpy as np
+
+# Импортируем твои утилиты
+from detection_utils import detect_pose, check_technique, USER_POSE
+from tracker_utils import (
+    get_body_points,
+    get_all_angles,
+    update_tracker,
+)
 
 
 class SquatTrainer:
     def __init__(self):
-        self.state = {"reps": 0, "goal": False, "pose": USER_POSE.UP.value}
-        self.p_tracker = {"last": None, "count": 0}
-        self.e_tracker = {"last": [], "count": 0, "current": [], "spoken": []}
+        self.mp_pose = mp.solutions.pose
 
-        self.model, self.mp_pose = setup_mediapipe()
+        # Две независимые модели для стабильности на Intel Arc
+        self.model_front = self.mp_pose.Pose(model_complexity=0)
+        self.model_side = self.mp_pose.Pose(model_complexity=0)
 
-    def process_frame(self, frame):
-        results = self.model.process(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+        # Общее состояние
+        self.state = {
+            "reps": 0,
+            "is_training": False,
+            "quit": False,
+            "pose": USER_POSE.UP.value,
+            "target_reps": 10,
+        }
 
+        # Трекеры для фильтрации поз и ошибок (нужны для update_tracker)
+        self.p_tracker = {"history": [], "current": None}
+        self.e_tracker = {"history": [], "current": [], "spoken": []}
+
+        # Кэш для фронтальной камеры
+        self.last_front_res = None
+        self.last_front_err = []
+
+    def check_shoulder_line(self, landmarks):
+        """Логика для фронтальной камеры"""
+        left_shoulder = landmarks[self.mp_pose.PoseLandmark.LEFT_SHOULDER]
+        right_shoulder = landmarks[self.mp_pose.PoseLandmark.RIGHT_SHOULDER]
+        diff = abs(left_shoulder.y - right_shoulder.y)
+
+        if diff > 0.05:  # Порог 5%
+            return ["Krzywe plecy!"]
+        return []
+
+    def process_front_view(self, frame):
+        """Минимальная обработка фронталки"""
+        results = self.model_front.process(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+        front_errors = []
         if results.pose_landmarks:
-            run_analysis(results, self.state, self.p_tracker, self.e_tracker)
+            front_errors = self.check_shoulder_line(results.pose_landmarks.landmark)
+        return results, front_errors
 
-            self.state["goal"], self.state["reps"] = process_exercise_logic(
-                self.state["pose"], self.state["goal"], self.state["reps"]
-            )
+    def process_side_view(self, frame):
+        """Основная логика приседаний (Side View)"""
+        results = self.model_side.process(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+        side_errors = []
 
-            return results, self.state, self.e_tracker["current"]
+        if results.pose_landmarks and self.state["is_training"]:
+            # Используем твою логику из app_utils/tracker_utils
+            landmarks = results.pose_landmarks.landmark
+            pts = get_body_points(landmarks)
+            ang = get_all_angles(pts)
 
-        return None, self.state, []
+            # Определение позы (UP, DOWN и т.д.)
+            raw_p = detect_pose(ang["lka"], ang["rka"], ang["lha"], ang["rha"])
+            confirmed_p = update_tracker(raw_p, self.p_tracker, 3)
+
+            # Логика подсчета повторений
+            if confirmed_p is not None:
+                if (
+                    self.state["pose"] == USER_POSE.DOWN.value
+                    and confirmed_p == USER_POSE.UP.value
+                ):
+                    self.state["reps"] += 1
+                self.state["pose"] = confirmed_p
+
+            # Проверка техники только в нижней точке
+            if self.state["pose"] in [USER_POSE.DOWN.value, USER_POSE.NOT_ENOUGH.value]:
+                raw_e = check_technique(**ang)
+                confirmed_e = update_tracker(raw_e, self.e_tracker, 3)
+                if confirmed_e is not None:
+                    side_errors = confirmed_e
+                    # Здесь можно вызвать speak из tts, если нужно
+
+        return results, side_errors

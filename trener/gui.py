@@ -1,91 +1,59 @@
 import customtkinter as ctk
-import cv2
 from PIL import Image
-import mediapipe as mp
-import numpy as np
-import os
-from trainer_logic import SquatTrainer
+import cv2
 
 
 class App(ctk.CTk):
     def __init__(self):
         super().__init__()
-        self.title("AI Trainer - Dual View")
-        self.geometry("1600x900")
-        self.configure(fg_color="#242424")
-        self.trainer = SquatTrainer()
+        self.title("AI Trainer Dual-View Pro")
+        self.geometry("1400x900")
+        self.configure(fg_color="#121212")
 
-        # self.cap_front = cv2.VideoCapture(1)
-        self.cap_side = cv2.VideoCapture(0)
+        self.grid_columnconfigure((0, 1), weight=1)
+        self.grid_rowconfigure(1, weight=1)
 
-        self.info_label = ctk.CTkLabel(
-            self,
-            text="REPS: 0 | STATE: UP",
-            font=("Arial", 32, "bold"),
-            text_color="#00FF00",
+        self.reps_label = ctk.CTkLabel(
+            self, text="REPS: 0", font=("Arial", 60, "bold"), text_color="#00FF41"
         )
-        self.info_label.pack(pady=(20, 10))
+        self.reps_label.grid(row=0, column=0, columnspan=2, pady=20)
 
-        self.video_label = ctk.CTkLabel(self, text="")
-        self.video_label.pack(pady=10, padx=10, fill="both", expand=True)
-
-        self.btn_quit = ctk.CTkButton(
-            self,
-            text="STOP (Q)",
-            command=self.force_exit,
-            width=300,
-            height=60,
-            font=("Arial", 20, "bold"),
-            fg_color="#cc0000",
-            hover_color="#ff0000",
+        # ПРОВЕРЬ ТУТ: self.video_left должен быть объявлен именно так
+        self.video_left = ctk.CTkLabel(
+            self, text="", fg_color="#1e1e1e", corner_radius=12
         )
-        self.btn_quit.pack(pady=(10, 30))
+        self.video_left.grid(row=1, column=0, padx=10, pady=10, sticky="nsew")
 
-        self.bind("<KeyPress-q>", lambda e: self.force_exit())
-        self.bind("<KeyPress-Q>", lambda e: self.force_exit())
+        self.video_right = ctk.CTkLabel(
+            self, text="", fg_color="#1e1e1e", corner_radius=12
+        )
+        self.video_right.grid(row=1, column=1, padx=10, pady=10, sticky="nsew")
 
-        self.update_loop()
-        self.protocol("WM_DELETE_WINDOW", self.force_exit)
+        self.error_label = ctk.CTkLabel(
+            self, text="", font=("Arial", 24), text_color="#FF4444", wraplength=1000
+        )
+        self.error_label.grid(row=2, column=0, columnspan=2, pady=10)
 
-    def update_loop(self):
-        # ret_f, frame_f = self.cap_front.read()
-        ret_s, frame_s = self.cap_side.read()
+        self.btn_stop = ctk.CTkButton(
+            self,
+            text="STOP SESSION",
+            width=600,
+            height=80,
+            font=("Arial", 28, "bold"),
+            fg_color="#B20000",
+            hover_color="#FF0000",
+            corner_radius=15,
+        )
+        self.btn_stop.grid(row=3, column=0, columnspan=2, pady=30)
 
-        # if ret_f and ret_s:
-        if ret_s:
-            # frame_f = cv2.resize(frame_f, (640, 480))
-            frame_s = cv2.resize(frame_s, (640, 480))
-            results, state, errors = self.trainer.process_frame(frame_s)
+    def update_cameras(self, frame_left, frame_right):
+        # Используем фиксированные размеры, чтобы Tkinter не "схлопывал" виджеты
+        img_l = Image.fromarray(cv2.cvtColor(frame_left, cv2.COLOR_BGR2RGB))
+        ctk_l = ctk.CTkImage(light_image=img_l, dark_image=img_l, size=(600, 450))
+        self.video_left.configure(image=ctk_l, text="")  # Убираем текст загрузки
+        self.video_left.image = ctk_l
 
-            if results and results.pose_landmarks:
-                mp.solutions.drawing_utils.draw_landmarks(
-                    frame_s,
-                    results.pose_landmarks,
-                    self.trainer.mp_pose.POSE_CONNECTIONS,
-                )
-
-            combined_frame = cv2.hconcat([frame_s])
-
-            self.info_label.configure(
-                text=f"REPS: {state['reps']} | STATE: {state['pose']}"
-            )
-
-            img = Image.fromarray(cv2.cvtColor(combined_frame, cv2.COLOR_BGR2RGB))
-            ctk_img = ctk.CTkImage(light_image=img, dark_image=img, size=(1280, 480))
-
-            self.video_label.configure(image=ctk_img)
-            self.video_label.image = ctk_img
-
-        self.after(10, self.update_loop)
-
-    def force_exit(self):
-        if hasattr(self, "cap_front") and self.cap_front.isOpened():
-            self.cap_front.release()
-        if hasattr(self, "cap_side") and self.cap_side.isOpened():
-            self.cap_side.release()
-
-        self.destroy()
-        os._exit(0)
-
-    def on_closing(self):
-        self.force_exit()
+        img_r = Image.fromarray(cv2.cvtColor(frame_right, cv2.COLOR_BGR2RGB))
+        ctk_r = ctk.CTkImage(light_image=img_r, dark_image=img_r, size=(600, 450))
+        self.video_right.configure(image=ctk_r, text="")
+        self.video_right.image = ctk_r

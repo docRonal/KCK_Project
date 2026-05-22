@@ -1,64 +1,98 @@
 import cv2
+import os
 import mediapipe as mp
-from tts import speak
-from detection_utils import USER_POSE
-from tracker_utils import process_exercise_logic
-from interface import render_ui
-from app_utils import setup_mediapipe, run_analysis
-from voice_commands import VoiceAssistant 
+from gui import App
+from trainer_logic import SquatTrainer
+from voice_commands import VoiceAssistant
+
 
 def main():
-    state = {
-        "reps": 0, 
-        "goal": False, 
-        "pose": USER_POSE.UP.value,
-        "is_training": False,  
-        "quit": False,         
-        "target_reps": 10     
-    }
-    p_tracker = {"last": None, "count": 0}
-    e_tracker = {"last": [], "count": 0, "current": [], "spoken": []}
+    gui = App()
+    trainer = SquatTrainer()
+    print("Created squat trainer")
+    cap_1 = cv2.VideoCapture(0)
+    cap_2 = cv2.VideoCapture(1)
+    import time
 
-    model, mp_pose = setup_mediapipe()
-    cap = cv2.VideoCapture(0)
-    
-    assistant = VoiceAssistant(state)
+    print("cameras onboard")
+    for c in [cap_1, cap_2]:
+        if c.isOpened():
+            c.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+            c.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+            c.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+    print("setted cameras")
+    assistant = VoiceAssistant(trainer.state)
+    print("created assistant")
     assistant.start()
+    print("started assistant")
 
-    speak("System gotowy. Powiedz: trening.")
+    def on_stop():
+        trainer.state["quit"] = True
 
-    while cap.isOpened() and not state["quit"]: 
-        ret, frame = cap.read()
-        if not ret:
-            break
+    gui.btn_stop.configure(command=on_stop)
+    frame_counter = 0
 
-        results = model.process(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+    def run_loop():
+        nonlocal frame_counter
 
-        if results.pose_landmarks:
+        if trainer.state.get("quit", False):
+            cap_1.release()
+            cap_2.release()
+            gui.destroy()
+            os._exit(0)
+        print("READING CAMERAS...")
+        ret1, frame1 = cap_1.read()
+        ret2, frame2 = cap_2.read()
+        if not ret1:
+            print("CAMERA 1 FAILED")
+            gui.after(100, run_loop)
+            return
+
+        if not ret2:
+            print("CAMERA 2 FAILED - CLONING FRAME 1")
+            frame2 = frame1.copy()
+            ret2 = True
+
+        print("PROCESSING SIDE VIEW...")
+        res_side, err_side = trainer.process_side_view(frame2)
+
+        all_errors = list(err_side)
+
+        if frame_counter % 30 == 0:
+            print("PROCESSING FRONT VIEW...")
+            trainer.last_front_res, trainer.last_front_err = trainer.process_front_view(
+                frame1
+            )
+
+        all_errors.extend(trainer.last_front_err)
+
+        print("DRAWING...")
+        if res_side and res_side.pose_landmarks:
             mp.solutions.drawing_utils.draw_landmarks(
-                frame, results.pose_landmarks, mp_pose.POSE_CONNECTIONS
+                frame2, res_side.pose_landmarks, trainer.mp_pose.POSE_CONNECTIONS
             )
 
-            if state["is_training"]:
-                run_analysis(results, state, p_tracker, e_tracker)
-
-                state["goal"], state["reps"] = process_exercise_logic(
-                    state["pose"], state["goal"], state["reps"]
-                )
-
-            render_ui(
-                frame, state["reps"], state["pose"], state["goal"], e_tracker["current"]
+        if trainer.last_front_res and trainer.last_front_res.pose_landmarks:
+            mp.solutions.drawing_utils.draw_landmarks(
+                frame1,
+                trainer.last_front_res.pose_landmarks,
+                trainer.mp_pose.POSE_CONNECTIONS,
             )
-            
-            if not state["is_training"]:
-                 cv2.putText(frame, "Powiedz 'Zacznij trening'", (10, 220), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 0, 0), 2)
 
-        cv2.imshow("Trener", frame)
-        if cv2.waitKey(1) & 0xFF == ord("q"):
-            break
+        print("UPDATING GUI...")
+        gui.reps_label.configure(text=f"REPS: {trainer.state['reps']}")
+        gui.error_label.configure(text=" | ".join(all_errors))
+        gui.update_cameras(frame1, frame2)
 
-    cap.release()
-    cv2.destroyAllWindows()
+        print("DEBUG: Frame processed")
+        frame_counter += 1
+        gui.after(30, run_loop)
+
+    print("STEP 5: Launching GUI Loop...")
+    gui.after(100, run_loop)
+    gui.mainloop()
+
 
 if __name__ == "__main__":
     main()
+
