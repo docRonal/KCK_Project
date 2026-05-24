@@ -3,45 +3,47 @@ import queue
 import threading
 import time
 
-# Очередь для фраз
 speech_queue = queue.Queue()
 
-
 def _worker():
-    """Фоновый поток, который живет всё время работы программы"""
-    # Инициализируем движок ОДИН РАЗ внутри этого потока
-    engine = pyttsx3.init()
-    engine.setProperty("rate", 170)
+    try:
+        engine = pyttsx3.init()
+        engine.setProperty("rate", 170)
+        
+        # Надійно шукаємо Paulina (ми знаємо, що вона є)
+        voices = engine.getProperty('voices')
+        for voice in voices:
+            if 'PAULINA' in voice.id.upper() or 'pl-PL' in getattr(voice, 'languages', []):
+                engine.setProperty('voice', voice.id)
+                break
+                
+        # Тестовий звук при запуску (щоб ти знав, що TTS живий)
+        engine.say("System audio gotowy")
+        engine.runAndWait()
 
-    while True:
-        try:
-            # Ждем текст из очереди
-            text = speech_queue.get(timeout=1)
-            if text is None:
-                break  # Сигнал для выхода
+        while True:
+            try:
+                text = speech_queue.get(timeout=1)
+                if text is None:
+                    break 
 
-            engine.say(text)
-            engine.runAndWait()
+                engine.say(text)
+                engine.runAndWait()
+                speech_queue.task_done()
+            except queue.Empty:
+                continue
+            except Exception as e:
+                print(f"TTS Loop Error: {e}")
+                
+    except Exception as e:
+        print(f"CRITICAL TTS INIT ERROR: {e}")
 
-            # Небольшая пауза, чтобы не захлебываться
-            speech_queue.task_done()
-        except queue.Empty:
-            continue
-        except Exception as e:
-            print(f"TTS Error: {e}")
-
-
-# Запускаем поток-воркер один раз при импорте модуля
 worker_thread = threading.Thread(target=_worker, daemon=True)
 worker_thread.start()
 
-
 def speak(text):
-    """Теперь эта функция просто кидает текст в очередь, что очень быстро"""
     if text:
         speech_queue.put(text)
 
-
 def stop_tts():
-    """Для корректного завершения"""
     speech_queue.put(None)

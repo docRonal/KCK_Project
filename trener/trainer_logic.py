@@ -25,12 +25,25 @@ class SquatTrainer:
             "is_training": False,
             "quit": False,
             "pose": USER_POSE.UP.value,
-            "target_reps": 10,
+            "target_reps": 1,"start_time": 0.0,
+            "session_error_count": 0
         }
 
-        # Трекеры для фильтрации поз и ошибок (нужны для update_tracker)
-        self.p_tracker = {"history": [], "current": None}
-        self.e_tracker = {"history": [], "current": [], "spoken": []}
+        # Трекеры для фильтрации поз и ошибок
+        self.p_tracker = {
+            "last": None, 
+            "count": 0, 
+            "history": [], 
+            "current": None
+        }
+        self.e_tracker = {
+            "last": [], 
+            "count": 0, 
+            "history": [], 
+            "current": [], 
+            "spoken": [], 
+            "last_counted": []
+        }
 
         # Кэш для фронтальной камеры
         self.last_front_res = None
@@ -83,6 +96,13 @@ class SquatTrainer:
                 raw_e = check_technique(**ang)
                 confirmed_e = update_tracker(raw_e, self.e_tracker, 3)
                 if confirmed_e is not None:
+                    # ДОДАНО: Логіка підрахунку нових унікальних помилок
+                    if confirmed_e and confirmed_e != self.e_tracker.get("last_counted", []):
+                        self.state["session_error_count"] += len(confirmed_e)
+                        self.e_tracker["last_counted"] = confirmed_e
+                    elif not confirmed_e:
+                        self.e_tracker["last_counted"] = []
+                    
                     side_errors = confirmed_e
                     # Здесь можно вызвать speak из tts, если нужно
 

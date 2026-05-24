@@ -1,7 +1,7 @@
 import customtkinter as ctk
 from PIL import Image
 import cv2
-
+from history_gui import HistoryWindow
 
 class App(ctk.CTk):
     def __init__(self):
@@ -45,6 +45,24 @@ class App(ctk.CTk):
             corner_radius=15,
         )
         self.btn_stop.grid(row=3, column=0, columnspan=2, pady=30)
+        
+        # --- ДОДАНО: Кнопка історії ---
+        self.btn_history = ctk.CTkButton(
+            self,
+            text="TRAINING HISTORY",
+            width=600,
+            height=60,
+            font=("Arial", 24, "bold"),
+            fg_color="#1f538d",
+            hover_color="#14375e",
+            corner_radius=15,
+            command=self.open_history
+        )
+        self.btn_history.grid(row=4, column=0, columnspan=2, pady=10)
+    
+    # --- ДОДАНО: Метод відкриття вікна ---
+    def open_history(self):
+        HistoryWindow(self)
 
     def update_cameras(self, frame_left, frame_right):
         # Используем фиксированные размеры, чтобы Tkinter не "схлопывал" виджеты
