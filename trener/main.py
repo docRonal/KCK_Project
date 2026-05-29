@@ -5,14 +5,37 @@ from gui import App
 from trainer_logic import SquatTrainer
 from voice_commands import VoiceAssistant
 
+def list_cameras():
+    for i in range(5):
+        cap = cv2.VideoCapture(i)
+        if cap.isOpened():
+            print(f"Index {i}: Camera FOUND")
+            cap.release()
+        else:
+            print(f"Index {i}: Not found")
 
 def main():
     gui = App()
     trainer = SquatTrainer()
     print("Created squat trainer")
+    list_cameras()
     cap_1 = cv2.VideoCapture(0)
-    cap_2 = cv2.VideoCapture(1)
+    cap_2 = cv2.VideoCapture(1, cv2.CAP_MSMF)
+    while True:
+        ret, frame = cap_2.read()
 
+        if not ret:
+            print("NO FRAME")
+            break
+
+        cv2.imshow("cam", frame)
+
+        if cv2.waitKey(1) == 27:
+            break
+ 
+    import time
+    time.sleep(2)
+    #cap_2.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
     print("cameras onboard")
     for c in [cap_1, cap_2]:
         if c.isOpened():
@@ -85,7 +108,7 @@ def main():
 
         print("DEBUG: Frame processed")
         frame_counter += 1
-        gui.after(30, run_loop)
+        gui.after(100, run_loop)
 
     print("STEP 5: Launching GUI Loop...")
     gui.after(100, run_loop)
