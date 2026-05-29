@@ -18,7 +18,6 @@ class App(ctk.CTk):
         )
         self.reps_label.grid(row=0, column=0, columnspan=2, pady=20)
 
-        # ПРОВЕРЬ ТУТ: self.video_left должен быть объявлен именно так
         self.video_left = ctk.CTkLabel(
             self, text="", fg_color="#1e1e1e", corner_radius=12
         )
@@ -47,10 +46,9 @@ class App(ctk.CTk):
         self.btn_stop.grid(row=3, column=0, columnspan=2, pady=30)
 
     def update_cameras(self, frame_left, frame_right):
-        # Используем фиксированные размеры, чтобы Tkinter не "схлопывал" виджеты
         img_l = Image.fromarray(cv2.cvtColor(frame_left, cv2.COLOR_BGR2RGB))
         ctk_l = ctk.CTkImage(light_image=img_l, dark_image=img_l, size=(600, 450))
-        self.video_left.configure(image=ctk_l, text="")  # Убираем текст загрузки
+        self.video_left.configure(image=ctk_l, text="")
         self.video_left.image = ctk_l
 
         img_r = Image.fromarray(cv2.cvtColor(frame_right, cv2.COLOR_BGR2RGB))

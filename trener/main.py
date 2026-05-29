@@ -12,7 +12,6 @@ def main():
     print("Created squat trainer")
     cap_1 = cv2.VideoCapture(0)
     cap_2 = cv2.VideoCapture(1)
-    import time
 
     print("cameras onboard")
     for c in [cap_1, cap_2]:
@@ -95,4 +94,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
