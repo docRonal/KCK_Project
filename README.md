@@ -1,4 +1,4 @@
-#KCK_Project - AI Lunge Technique Analyzer
+* **KCK_Project - AI Lunge Technique Analyzer
 
 W pełni interaktywna aplikacja oparta na wizji komputerowej (Computer Vision), zaprojektowana do analizy techniki wykonywania wykroków w czasie rzeczywistym. Projekt łączy nowoczesny interfejs graficzny, analizę obrazu z dwóch kamer, sterowanie głosem oraz lokalną bazę danych do monitorowania postępów treningowych.
 
@@ -6,11 +6,11 @@ W pełni interaktywna aplikacja oparta na wizji komputerowej (Computer Vision), 
 
 Projekt został zrealizowany w ramach metodyki **Scrum**. Zespół składa się z trzech osób, z wyraźnie podzielonymi obowiązkami:
 
-* ** docRonal (Twórca projektu i Scrum Master)** 
+* **ocRonal (Twórca projektu i Scrum Master)** 
   Pomysłodawca projektu. Odpowiedzialny za wdrożenie komend głosowych (STT), modułu Text-to-Speech (TTS), implementację bezdotykowego sterowania aplikacją (hands-free) oraz głęboką refaktoryzację i architekturę kodu.
 * **refrigerator2 (Główny Deweloper / Lead Developer)** 
   Główny projektant i programista interfejsu użytkownika. Odpowiadał za migrację i wdrożenie nowoczesnego GUI w oparciu o CustomTkinter, a także za intensywne debugowanie, optymalizację i bieżącą refaktoryzację aplikacji.
-* ** YuriiSladkovskyi (Odpowiedzialny za Bazy Danych i Architekt)** 
+* **YuriiSladkovskyi (Odpowiedzialny za Bazy Danych i Architekt)** 
   Zajął się projektowaniem i wdrożeniem logiki zapisu danych. Odpowiada za integrację lokalnej bazy danych SQLite3, aktualizację stosu technologicznego w kodzie oraz architekturę systemu śledzenia postępów.
 
 ## Główne Funkcjonalności
