@@ -13,7 +13,6 @@ from tracker_utils import (
 class SquatTrainer:
     def __init__(self):
         self.mp_pose = mp.solutions.pose
-
         self.model_front = self.mp_pose.Pose(model_complexity=0)
         self.model_side = self.mp_pose.Pose(model_complexity=0)
 
@@ -23,10 +22,21 @@ class SquatTrainer:
             "quit": False,
             "pose": USER_POSE.UP.value,
             "target_reps": 10,
+            "has_downed": False,
         }
 
-        self.p_tracker = {"history": [], "current": None}
-        self.e_tracker = {"history": [], "current": [], "spoken": []}
+        self.p_tracker = {
+            "history": [], 
+            "last": None, 
+            "count": 0
+        }
+        
+        self.e_tracker = {
+            "history": [], 
+            "last": [], 
+            "count": 0, 
+            "spoken": []
+        }
 
         self.last_front_res = None
         self.last_front_err = []
@@ -51,20 +61,22 @@ class SquatTrainer:
         results = self.model_side.process(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
         side_errors = []
 
-        if results.pose_landmarks and self.state["is_training"]:
+        if results.pose_landmarks:
             landmarks = results.pose_landmarks.landmark
             pts = get_body_points(landmarks)
             ang = get_all_angles(pts)
 
             raw_p = detect_pose(ang["lka"], ang["rka"], ang["lha"], ang["rha"])
-            confirmed_p = update_tracker(raw_p, self.p_tracker, 3)
+            confirmed_p = update_tracker(raw_p, self.p_tracker, 1)
 
-            if confirmed_p is not None:
-                if (
-                    self.state["pose"] == USER_POSE.DOWN.value
-                    and confirmed_p == USER_POSE.UP.value
-                ):
+            if confirmed_p is not None and self.state["is_training"]:
+                if confirmed_p == USER_POSE.DOWN.value:
+                    self.state["has_downed"] = True
+                if self.state["has_downed"] and confirmed_p == USER_POSE.UP.value:
                     self.state["reps"] += 1
+                    self.state["has_downed"] = False
+                    print(f"Rep counted! Total: {self.state['reps']}")
+
                 self.state["pose"] = confirmed_p
 
             if self.state["pose"] in [USER_POSE.DOWN.value, USER_POSE.NOT_ENOUGH.value]:

@@ -33,8 +33,6 @@ def check_technique(lka, rka, lha, rha, laa, raa):
 
     if front_hip < 60:
         errors.append("LEANING FORWARD")
-    elif front_hip > 135:
-        errors.append("BACK NOT STRAIGHT")
 
     if laa < 75 or raa < 75:
         errors.append("HEEL LIFTED")
@@ -53,7 +51,7 @@ def detect_pose(lka, rka, lha, rha):
     up_tol = 15
     down_tol = 20
 
-    if all(abs(170 - a) < up_tol for a in [lka, rka, lha, rha]):
+    if all(abs(160 - a) < up_tol for a in [lka, rka, lha, rha]):
         return USER_POSE.UP.value
 
     if abs(90 - lka) < down_tol and abs(90 - rka) < down_tol:
