@@ -8,3 +8,19 @@
 /dataSources.local.xml
 # Editor-based HTTP Client requests
 /httpRequests/
+
+# Python bytecode and cache files
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+
+# Virtual environment folders
+venv/
+.venv/
+env/
+
+# IDE specific files and folders
+.idea/
+.vscode/
+.DS_Store
