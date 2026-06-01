@@ -1,7 +1,7 @@
 import customtkinter as ctk
 from PIL import Image
 import cv2
-
+from history_gui import HistoryWindow
 
 class App(ctk.CTk):
     def __init__(self):
@@ -18,6 +18,7 @@ class App(ctk.CTk):
         )
         self.reps_label.grid(row=0, column=0, columnspan=2, pady=20)
 
+        # ПРОВЕРЬ ТУТ: self.video_left должен быть объявлен именно так
         self.video_left = ctk.CTkLabel(
             self, text="", fg_color="#1e1e1e", corner_radius=12
         )
@@ -44,11 +45,30 @@ class App(ctk.CTk):
             corner_radius=15,
         )
         self.btn_stop.grid(row=3, column=0, columnspan=2, pady=30)
+        
+        # --- ДОДАНО: Кнопка історії ---
+        self.btn_history = ctk.CTkButton(
+            self,
+            text="TRAINING HISTORY",
+            width=600,
+            height=60,
+            font=("Arial", 24, "bold"),
+            fg_color="#1f538d",
+            hover_color="#14375e",
+            corner_radius=15,
+            command=self.open_history
+        )
+        self.btn_history.grid(row=4, column=0, columnspan=2, pady=10)
+    
+    # --- ДОДАНО: Метод відкриття вікна ---
+    def open_history(self):
+        HistoryWindow(self)
 
     def update_cameras(self, frame_left, frame_right):
+        # Используем фиксированные размеры, чтобы Tkinter не "схлопывал" виджеты
         img_l = Image.fromarray(cv2.cvtColor(frame_left, cv2.COLOR_BGR2RGB))
         ctk_l = ctk.CTkImage(light_image=img_l, dark_image=img_l, size=(600, 450))
-        self.video_left.configure(image=ctk_l, text="")
+        self.video_left.configure(image=ctk_l, text="")  # Убираем текст загрузки
         self.video_left.image = ctk_l
 
         img_r = Image.fromarray(cv2.cvtColor(frame_right, cv2.COLOR_BGR2RGB))
