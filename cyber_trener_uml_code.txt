@@ -1,0 +1,131 @@
+@startuml
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+skinparam monochrome true
+
+title Diagram UML Projektu: AI Trainer Dual-View Pro
+
+package "Moduł główny" {
+    class Main_Script << (S, #FF7700) Script >> {
+        + cap_1: VideoCapture
+        + cap_2: VideoCapture
+        + main()
+        + save_current_session()
+        + on_stop()
+        + run_loop()
+    }
+}
+
+package "Interfejs Użytkownika (GUI)" {
+    class App {
+        + reps_label: CTkLabel
+        + video_left: CTkLabel
+        + video_right: CTkLabel
+        + error_label: CTkLabel
+        + btn_stop: CTkButton
+        + btn_history: CTkButton
+        + __init__()
+        + open_history()
+        + update_cameras(frame_left, frame_right)
+    }
+
+    class HistoryWindow {
+        + edit_mode: bool
+        + tree: ttk.Treeview
+        + btn_edit: CTkButton
+        + btn_delete: CTkButton
+        + __init__(master)
+        + format_duration(total_seconds)
+        + load_data()
+        + toggle_edit_mode()
+        + on_tree_click(event)
+        + delete_selected()
+    }
+}
+
+package "Wizja Komputerowa i Logika" {
+    class SquatTrainer {
+        + mp_pose: MediaPipe Pose
+        + model_front: Pose
+        + model_side: Pose
+        + state: dict
+        + p_tracker: dict
+        + e_tracker: dict
+        + __init__()
+        + check_shoulder_line(landmarks)
+        + process_front_view(frame)
+        + process_side_view(frame)
+    }
+
+    enum USER_POSE {
+        UP = 0
+        DOWN = 1
+        TOO_DEEP = 2
+        NOT_ENOUGH = 3
+        UNKNOWN = 4
+        UNKNOWN_SIDE = 7
+    }
+
+    class DetectionUtils << (M, #FF7700) Module >> {
+        + calculate_angle(a, b, c)
+        + check_technique(lka, rka, lha, rha, laa, raa)
+        + detect_side(lha, rha, t)
+        + detect_pose(lka, rka, lha, rha)
+    }
+
+    class TrackerUtils << (M, #FF7700) Module >> {
+        + get_body_points(lm)
+        + get_all_angles(pts)
+        + update_tracker(current_val, tracker, smooth)
+        + process_exercise_logic(pose, goal, reps)
+    }
+}
+
+package "Asystent Głosowy i Audio" {
+    class VoiceAssistant {
+        + state: dict
+        + recognizer: Recognizer
+        + is_listening: bool
+        + __init__(state)
+        + listen_loop()
+        + process_command(command)
+        + start()
+    }
+
+    class TTS_Module << (M, #FF7700) Module >> {
+        + speech_queue: Queue
+        + worker_thread: Thread
+        + _init_engine()
+        + _worker()
+        + speak(text)
+        + stop_tts()
+    }
+}
+
+package "Baza Danych" {
+    class DatabaseManager << (M, #FF7700) Module >> {
+        + DB_PATH: str
+        + init_db()
+        + save_session(duration, reps_done, target, errors)
+        + get_all_sessions()
+        + delete_records(ids_to_delete)
+    }
+}
+
+' Relacje (Relationships)
+Main_Script --> App : "Tworzy i uruchamia"
+Main_Script --> SquatTrainer : "Inicjalizuje logikę"
+Main_Script --> VoiceAssistant : "Uruchamia w wątku"
+Main_Script --> DatabaseManager : "Zapisuje wyniki"
+
+App "1" *-- "1" HistoryWindow : "Otwiera (Kompozycja)"
+HistoryWindow --> DatabaseManager : "Odczytuje/Usuwa historię"
+
+SquatTrainer --> DetectionUtils : "Używa do analizy"
+SquatTrainer --> TrackerUtils : "Oblicza kąty"
+SquatTrainer ..> USER_POSE : "Używa stanów"
+
+VoiceAssistant --> TTS_Module : "Wysyła tekst do kolejki"
+VoiceAssistant ..> SquatTrainer : "Modyfikuje wspólny dict (state)"
+
+@enduml
