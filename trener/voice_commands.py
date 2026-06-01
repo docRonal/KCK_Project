@@ -10,7 +10,7 @@ class VoiceAssistant:
         self.is_listening = True
 
     def listen_loop(self):
-        with sr.Microphone(device_index=1) as source:
+        with sr.Microphone(device_index=1) as source: # Вказуємо індекс потрібного мікрофона
             self.recognizer.adjust_for_ambient_noise(source, duration=1)
             self.recognizer.dynamic_energy_threshold = True
             print("Mikrofon gotowy. Słucham...")
@@ -20,21 +20,24 @@ class VoiceAssistant:
                     audio = self.recognizer.listen(source, timeout=1, phrase_time_limit=3)
                     if not self.is_listening:
                         break
+                    
                     command = self.recognizer.recognize_google(audio, language="pl-PL").lower()
                     print(f"Rozpoznano: {command}")
                     self.process_command(command)
                     
-                except (sr.WaitTimeoutError, sr.UnknownValueError):
+                except sr.WaitTimeoutError:
+                    continue
+                except sr.UnknownValueError:
                     continue
                 except Exception as e:
                     print(f"Błąd mikrofonu: {e}")
-                    time.sleep(1) # Захист від спаму помилками, якщо пристрій відключився
+                    time.sleep(1) # Захист від спаму помилками
 
     def process_command(self, command):
         if "trening" in command or "start" in command:
             self.state["is_training"] = True
-            self.state["start_time"] = time.time()  # ДОДАНО: фіксація часу
-            self.state["reps"] = 0                  # ДОДАНО: скидання лічильників
+            self.state["start_time"] = time.time()
+            self.state["reps"] = 0
             self.state["session_error_count"] = 0
             speak("Start trening")
             
@@ -46,9 +49,9 @@ class VoiceAssistant:
         elif "ile powtórzeń" in command or "ile" in command:
             if self.state.get("is_training"):
                 reps = self.state.get("reps", 0)
-                speak(f"You {reps} reapites")
+                speak(f"Zrobiłeś {reps} powtórzeń")
             else:
-                speak("Training is not start")
+                speak("Trening nie wystartował")
                 
         elif "ile zostało" in command:
             if self.state.get("is_training"):
@@ -58,9 +61,9 @@ class VoiceAssistant:
                 if left > 0:
                     speak(f"Zostało {left} powtórzeń")
                 else:
-                    speak("Goal!")
+                    speak("Cel osiągnięty!")
             else:
-                speak("Trening is not start")
+                speak("Trening nie wystartował")
 
     def start(self):
         thread = threading.Thread(target=self.listen_loop, daemon=True)

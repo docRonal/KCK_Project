@@ -111,7 +111,7 @@ def main():
 
         # print("DEBUG: Frame processed")
         frame_counter += 1
-        gui.after(30, run_loop)
+        gui.after(30, run_loop) # Замість 30 можна поставити 15 для більшої плавності, але це збільшить навантаження на CPU
 
     print("STEP 5: Launching GUI Loop...")
     gui.after(100, run_loop)
