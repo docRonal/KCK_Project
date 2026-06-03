@@ -2,6 +2,12 @@
 
 W pełni interaktywna aplikacja oparta na wizji komputerowej (Computer Vision), zaprojektowana do analizy techniki wykonywania wykroków w czasie rzeczywistym. Projekt łączy nowoczesny interfejs graficzny, analizę obrazu z dwóch kamer, sterowanie głosem oraz lokalną bazę danych do monitorowania postępów treningowych.
 
+## Polecenie do wstawienia w terminal żeby pobrać wszytkie niezbędne pakiety pip do urochomienia programu
+
+```bash
+$ pip install -r requirements.txt
+```
+
 ## Zespół Projektowy i Role
 
 Projekt został zrealizowany w ramach metodyki **Scrum**. Zespół składa się z trzech osób, z wyraźnie podzielonymi obowiązkami:

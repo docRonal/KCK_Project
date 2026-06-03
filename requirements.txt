@@ -1,0 +1,7 @@
+mediapipe==0.10.13
+customtkinter>=5.2.0
+opencv-python
+numpy
+pyttsx3
+SpeechRecognition
+Pillow
