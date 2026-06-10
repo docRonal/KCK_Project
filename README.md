@@ -7,7 +7,33 @@ W pełni interaktywna aplikacja oparta na wizji komputerowej (Computer Vision), 
 ```bash
 $ pip install -r requirements.txt
 ```
-
+## Przypadki dobrego i zlego użycia:
+✅ Przypadki dobrego użycia (Good Use Cases / Happy Paths)
+Idealne warunki kadrowania i oświetlenia
+Scenariusz: Użytkownik trenuje w dobrze oświetlonym pomieszczeniu. Kamera (lub obie kamery) jest ustawiona na wysokości pasa/klatki piersiowej w odpowiedniej odległości, tak aby cała sylwetka mieściła się w kadrze (szczególnie nogi i miednica).
+Rezultat: Model MediaPipe pewnie wychwytuje punkty kluczowe (landmarks), algorytm OpenCV precyzyjnie oblicza kąty w stawach kolanowych, a licznik powtórzeń działa bez zakłóceń.
+Wykorzystanie systemu Multi-Camera do zaawansowanej analityki
+Scenariusz: Użytkownik podłącza dwie kamery (np. widok z boku i widok z przodu/pod kątem), co zostało zaplanowane w Twoim Sprint v0.0.3.
+Rezultat: System uzyskuje trójwymiarowy obraz postawy użytkownika. Pozwala to na rejestrowanie nie tylko zginania kolan, ale także odchyleń bocznych (np. zapadanie się kolana do wewnątrz), co zapewnia maksymalnie dokładny feedback od asystenta.
+Sterowanie głosowe (Hands-free) w cichym, domowym otoczeniu
+Scenariusz: Użytkownik uruchamia program, zajmuje pozycję i za pomocą komendy głosowej rozpoczyna trening w cichym pokoju.
+Rezultat: Moduł STT (SpeechRecognition) wyraźnie wychwytuje komendy bez fałszywych dopasowań, a moduł TTS (pyttsx3 / gTTS) głośno i w odpowiednim momencie informuje o błędach w postawie, bez konieczności podchodzenia do ekranu czy używania myszy/klawiatury.
+Zbieranie i analiza danych o postępach
+Scenariusz: Użytkownik regularnie wykonuje wykroki z aplikacją.
+Rezultat: Lokalna baza danych (SQLite3) poprawnie gromadzi statystyki błędów i liczbę wykonanych serii, pozwalając na śledzenie postępów treningowych na wykresach lub w historii aplikacji.
+❌ Przypadki złego użycia (Bad Use Cases / Edge Cases / Misuse)
+Częściowe zasłonięcie ciała lub zła perspektywa (Martwe strefy)
+Scenariusz: Użytkownik stoi zbyt blisko kamery (ucięte stopy lub kolana) lub nagrywa się mocno z góry/z dołu. Ewentualnie trening odbywa się w ciemnym pomieszczeniu lub pod światło (silne nasłonecznienie z okna).
+Problem: Wizja komputerowa gubi kluczowe punkty szkieletu lub błędnie je interpretuje ("zgaduje"). Prowadzi to do sytuacji, w której aplikacja generuje fałszywe ostrzeżenia głosowe o błędach lub pomija prawidłowe powtórzenia.
+Zakłócenia akustyczne (Hałaśliwe środowisko)
+Scenariusz: Korzystanie z aplikacji w głośnej publicznej siłowni z grającą w tle muzyką lub rozmowami innych osób.
+Problem: Mikrofon zbiera głosy z otoczenia, przez co moduł Speech-to-Text nie jest w stanie rozpoznać komend sterujących. Jednocześnie podpowiedzi głosowe (TTS) o technice stają się niesłyszalne dla użytkownika, co czyni funkcję Hands-free bezużyteczną.
+Zbyt luźne lub zlewające się z tłem ubranie
+Scenariusz: Użytkownik wykonuje wykroki w bardzo szerokich spodniach dresowych (oversize), ukrywających zarysy nóg, lub w odzieży, której kolor całkowicie zlewa się ze ścianą z tyłu.
+Problem: MediaPipe może błędnie zidentyfikować rzeczywiste położenie stawów. Obliczenia kątów w kolanach będą zniekształcone, co całkowicie pozbawi algorytm wartości analitycznej.
+Wykonywanie ćwiczeń niezgodnych z przeznaczeniem
+Scenariusz: Użytkownik próbuje robić zwykłe przysiady, martwy ciąg lub podskoki, oczekując, że aplikacja "inteligentnie" je przeanalizuje.
+Problem: Ponieważ algorytm KCK_Project jest ściśle zaprogramowany na biomechanikę i kąty charakterystyczne dla wykroków (Lunges), system zacznie działać nieprzewidywalnie, spamować błędami lub zapisywać bezużyteczne dane (śmieci) do bazy SQLite3
 ## Zespół Projektowy i Role
 
 Projekt został zrealizowany w ramach metodyki **Scrum**. Zespół składa się z trzech osób, z wyraźnie podzielonymi obowiązkami:
