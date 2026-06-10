@@ -21,6 +21,7 @@ Rezultat: Moduł STT (SpeechRecognition) wyraźnie wychwytuje komendy bez fałsz
 Zbieranie i analiza danych o postępach
 Scenariusz: Użytkownik regularnie wykonuje wykroki z aplikacją.
 Rezultat: Lokalna baza danych (SQLite3) poprawnie gromadzi statystyki błędów i liczbę wykonanych serii, pozwalając na śledzenie postępów treningowych na wykresach lub w historii aplikacji.
+
 ❌ Przypadki złego użycia (Bad Use Cases / Edge Cases / Misuse)
 Częściowe zasłonięcie ciała lub zła perspektywa (Martwe strefy)
 Scenariusz: Użytkownik stoi zbyt blisko kamery (ucięte stopy lub kolana) lub nagrywa się mocno z góry/z dołu. Ewentualnie trening odbywa się w ciemnym pomieszczeniu lub pod światło (silne nasłonecznienie z okna).
