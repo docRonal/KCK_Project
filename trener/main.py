@@ -47,6 +47,7 @@ def main():
         cap_1 = cv2.VideoCapture(cams_idxs[0])
 
     if len(cams_idxs) > 1:
+        print(cams_idxs)
         cap_2 = cv2.VideoCapture(cams_idxs[1])
 
     if cap_1 is None:
@@ -54,11 +55,13 @@ def main():
         return
     
     print("cameras onboard")
-    for c in [cap_1, cap_2]:
-        if c is not None and c.isOpened():
-            c.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-            c.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
-            c.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+    # Прибираємо примусові налаштування для IP-камери
+    if cap_1 is not None and cap_1.isOpened():
+        cap_1.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+        cap_1.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+        cap_1.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+        
+    # Для cap_2 (DroidCam по Wi-Fi) нічого не задаємо через .set()!
     print("setted cameras")
     assistant = VoiceAssistant(trainer.state)
     print("created assistant")
@@ -119,7 +122,7 @@ def main():
 
         all_errors = list(err_side)
 
-        if frame_counter % 30 == 0:
+        if frame_counter % 1 == 0:
             # print("PROCESSING FRONT VIEW...")
             trainer.last_front_res, trainer.last_front_err = trainer.process_front_view(
                 frame1
@@ -147,7 +150,7 @@ def main():
 
         # print("DEBUG: Frame processed")
         frame_counter += 1
-        gui.after(5, run_loop) # Замість 30 можна поставити 15 для більшої плавності, але це збільшить навантаження на CPU
+        gui.after(15, run_loop) # Замість 30 можна поставити 15 для більшої плавності, але це збільшить навантаження на CPU
 
     print("STEP 5: Launching GUI Loop...")
     gui.after(100, run_loop)

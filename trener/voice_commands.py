@@ -10,7 +10,7 @@ class VoiceAssistant:
         self.is_listening = True
 
     def listen_loop(self):
-        with sr.Microphone(device_index=1) as source: # Вказуємо індекс потрібного мікрофона
+        with sr.Microphone(device_index=3) as source: # Вказуємо індекс потрібного мікрофона
             self.recognizer.adjust_for_ambient_noise(source, duration=1)
             self.recognizer.dynamic_energy_threshold = True
             print("Mikrofon gotowy. Słucham...")

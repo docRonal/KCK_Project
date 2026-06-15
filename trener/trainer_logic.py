@@ -26,7 +26,8 @@ class SquatTrainer:
             "quit": False,
             "pose": USER_POSE.UP.value,
             "target_reps": 1,"start_time": 0.0,
-            "session_error_count": 0
+            "session_error_count": 0,
+            "goal_reached": False
         }
 
         # Трекеры для фильтрации поз и ошибок
@@ -82,13 +83,18 @@ class SquatTrainer:
             raw_p = detect_pose(ang["lka"], ang["rka"], ang["lha"], ang["rha"])
             confirmed_p = update_tracker(raw_p, self.p_tracker, 3)
 
-            # Логика подсчета повторений
+            # Логіка підрахунку повторень
             if confirmed_p is not None:
-                if (
-                    self.state["pose"] == USER_POSE.DOWN.value
-                    and confirmed_p == USER_POSE.UP.value
-                ):
+                # 1. Фіксуємо досягнення нижньої точки (DOWN або TOO_DEEP)
+                if confirmed_p in [USER_POSE.DOWN.value, USER_POSE.TOO_DEEP.value]:
+                    self.state["goal_reached"] = True
+                
+                # 2. Якщо користувач повернувся у верхню точку (UP) і перед цим був внизу
+                elif confirmed_p == USER_POSE.UP.value and self.state.get("goal_reached", False):
                     self.state["reps"] += 1
+                    self.state["goal_reached"] = False  # Скидаємо прапорець для наступного повторення
+                
+                # Оновлюємо поточну позу
                 self.state["pose"] = confirmed_p
 
             # Проверка техники только в нижней точке
