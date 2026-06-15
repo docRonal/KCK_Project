@@ -96,11 +96,15 @@ def main():
                 cap_2.release()
             gui.destroy()
             os._exit(0)
-        # print("READING CAMERAS...")
+            
         ret1, frame1 = cap_1.read()
         if not ret1:
             gui.after(100, run_loop)
             return
+
+        # Відзеркалюємо по горизонталі для фронтального виду, щоб рухи були інтуїтивно зрозумілими для користувача
+        # Цифра 1 означає віддзеркалення по горизонталі (y-axis)
+        frame1 = cv2.flip(frame1, 1)
         
         # Логіка для другої камери
         if  cap_2 is not None:
@@ -143,7 +147,7 @@ def main():
 
         # print("DEBUG: Frame processed")
         frame_counter += 1
-        gui.after(30, run_loop) # Замість 30 можна поставити 15 для більшої плавності, але це збільшить навантаження на CPU
+        gui.after(5, run_loop) # Замість 30 можна поставити 15 для більшої плавності, але це збільшить навантаження на CPU
 
     print("STEP 5: Launching GUI Loop...")
     gui.after(100, run_loop)
