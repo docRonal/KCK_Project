@@ -7,20 +7,52 @@ from voice_commands import VoiceAssistant
 import time
 from db_manager import init_db, save_session
 
+
+def getCameras(max_cams=10):
+    cameras = []
+
+    for i in range(max_cams):
+        cap = cv2.VideoCapture(i)
+
+        if cap.isOpened():
+            ret, _ = cap.read()
+            if ret:
+                cameras.append(i)
+
+        cap.release()
+
+    return cameras
+
+
 def main():
     init_db()  # ДОДАНО: створення таблиці БД, якщо її нема
     gui = App()
     trainer = SquatTrainer()
     
-    USE_CAMERA_2 = False  # Зміни на True, коли підключиш другу камеру
+    #USE_CAMERA_2 = True  # Зміни на True, коли підключиш другу камеру
     
     print("Created squat trainer")
-    cap_1 = cv2.VideoCapture(0)
-    if USE_CAMERA_2:
-        cap_2 = cv2.VideoCapture(1)
-    else:
-        cap_2 = None
+    #cap_1 = cv2.VideoCapture(0)
+    #if USE_CAMERA_2:
+        #cap_2 = cv2.VideoCapture(1)
+    #else:
+        #cap_2 = None
 
+    cams_idxs = getCameras()
+
+    cap_1 = None
+    cap_2 = None
+
+    if len(cams_idxs) > 0:
+        cap_1 = cv2.VideoCapture(cams_idxs[0])
+
+    if len(cams_idxs) > 1:
+        cap_2 = cv2.VideoCapture(cams_idxs[1])
+
+    if cap_1 is None:
+        print("No cameras found")
+        return
+    
     print("cameras onboard")
     for c in [cap_1, cap_2]:
         if c is not None and c.isOpened():
@@ -71,7 +103,7 @@ def main():
             return
         
         # Логіка для другої камери
-        if USE_CAMERA_2 and cap_2 is not None:
+        if  cap_2 is not None:
             ret2, frame2 = cap_2.read()
             if not ret2:
                 frame2 = frame1.copy()
