@@ -13,10 +13,17 @@ class App(ctk.CTk):
         self.grid_columnconfigure((0, 1), weight=1)
         self.grid_rowconfigure(1, weight=1)
 
+        # --- ДОДАНО: Плашка статусу ---
+        self.status_label = ctk.CTkLabel(
+            self, text="TRAINER IS OFF", font=("Arial", 45, "bold"), text_color="#B20000"
+        )
+        self.status_label.grid(row=0, column=0, pady=20)
+
+        # --- ЗМІНЕНО: Зсуваємо лічильник повторень в 1-шу колонку ---
         self.reps_label = ctk.CTkLabel(
             self, text="REPS: 0", font=("Arial", 60, "bold"), text_color="#00FF41"
         )
-        self.reps_label.grid(row=0, column=0, columnspan=2, pady=20)
+        self.reps_label.grid(row=0, column=1, pady=20) # Прибрано columnspan=2
 
         # ПРОВЕРЬ ТУТ: self.video_left должен быть объявлен именно так
         self.video_left = ctk.CTkLabel(
@@ -46,7 +53,7 @@ class App(ctk.CTk):
         )
         self.btn_stop.grid(row=3, column=0, columnspan=2, pady=30)
         
-        # --- ДОДАНО: Кнопка історії ---
+        # --- Кнопка історії ---
         self.btn_history = ctk.CTkButton(
             self,
             text="TRAINING HISTORY",
@@ -60,7 +67,7 @@ class App(ctk.CTk):
         )
         self.btn_history.grid(row=4, column=0, columnspan=2, pady=10)
     
-    # --- ДОДАНО: Метод відкриття вікна ---
+    # --- Метод відкриття вікна ---
     def open_history(self):
         HistoryWindow(self)
 

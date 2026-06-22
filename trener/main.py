@@ -6,6 +6,7 @@ from trainer_logic import SquatTrainer
 from voice_commands import VoiceAssistant
 import time
 from db_manager import init_db, save_session
+from tts import speak
 
 
 def getCameras(max_cams=10):
@@ -68,9 +69,10 @@ def main():
     assistant.start()
     print("started assistant")
 
+    """Допоміжна функція для збереження даних у БД"""
     def save_current_session():
-        """ДОДАНО: Допоміжна функція для збереження даних у БД"""
-        if trainer.state.get("is_training") and trainer.state.get("start_time", 0) > 0:
+        # Змінено: Прибираємо умову is_training, щоб можна було зберегти сесію після її зупинки
+        if trainer.state.get("start_time", 0) > 0:
             duration = time.time() - trainer.state["start_time"]
             save_session(
                 duration=duration,
@@ -78,7 +80,7 @@ def main():
                 target_reps=trainer.state["target_reps"],
                 error_count=trainer.state.get("session_error_count", 0)
             )
-            trainer.state["start_time"] = 0  # Скидаємо, щоб не зберегти двічі
+            trainer.state["start_time"] = 0  # Скидаємо, щоб уникнути дублювання в БД
 
     def on_stop():
         assistant.is_listening = False  # Спочатку зупиняємо потік мікрофона
@@ -144,13 +146,39 @@ def main():
             )
 
         # print("UPDATING GUI...")
-        gui.reps_label.configure(text=f"REPS: {trainer.state['reps']}")
         gui.error_label.configure(text=" | ".join(all_errors))
+        
+        # 1. Автоматична зупинка та збереження, якщо ціль досягнута
+        if trainer.state["is_training"] and trainer.state["reps"] > 0 and trainer.state["reps"] >= trainer.state["target_reps"]:
+            trainer.state["is_training"] = False
+            save_current_session()
+            speak("Cel osiągnięty! Trening zakończony.")
+
+        # 2. Збереження, якщо тренування було зупинено голосовою командою ("zakończ"), 
+        # і дані ще не записані (start_time > 0)
+        if not trainer.state["is_training"] and trainer.state.get("start_time", 0) > 0:
+            save_current_session()
+
+        # 3. Оновлення плашки стану (GUI) з оптимізацією (перевіряємо поточний текст у віджеті)
+        expected_status = "TRAINER IS ON" if trainer.state["is_training"] else "TRAINER IS OFF"
+        if gui.status_label.cget("text") != expected_status:
+            if trainer.state["is_training"]:
+                gui.status_label.configure(text="TRAINER IS ON", text_color="#00FF41")
+            else:
+                gui.status_label.configure(text="TRAINER IS OFF", text_color="#B20000")
+
+        # Оновлення лічильника повторень теж тільки за зміни значення
+        expected_reps_text = f"REPS: {trainer.state['reps']}"
+        if gui.reps_label.cget("text") != expected_reps_text:
+            gui.reps_label.configure(text=expected_reps_text)
+        
         gui.update_cameras(frame1, frame2)
 
         # print("DEBUG: Frame processed")
         frame_counter += 1
-        gui.after(15, run_loop) # Замість 30 можна поставити 15 для більшої плавності, але це збільшить навантаження на CPU
+        gui.after(15, run_loop)  
+        # Використовуємо after для планування наступного виклику, замість time.sleep(). 
+        # паузи по 15 мс - це приблизно 66 FPS, але реальна швидкість буде залежати від обробки кадру.
 
     print("STEP 5: Launching GUI Loop...")
     gui.after(100, run_loop)

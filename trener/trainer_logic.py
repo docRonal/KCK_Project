@@ -2,7 +2,7 @@ import cv2
 import mediapipe as mp
 import numpy as np
 
-# Импортируем твои утилиты
+# Импортируем утилиты
 from detection_utils import detect_pose, check_technique, USER_POSE
 from tracker_utils import (
     get_body_points,
@@ -25,7 +25,8 @@ class SquatTrainer:
             "is_training": False,
             "quit": False,
             "pose": USER_POSE.UP.value,
-            "target_reps": 1,"start_time": 0.0,
+            "target_reps": 10, # Цільова кількість повторень
+            "start_time": 0.0,
             "session_error_count": 0,
             "goal_reached": False
         }

@@ -43,8 +43,14 @@ class VoiceAssistant:
             
         elif "zakończ" in command or "koniec" in command:
             self.state["is_training"] = False
-            self.state["quit"] = True 
-            speak("The End")
+            # self.state["quit"] = True  <--- ВИДАЛЕНО
+            speak("Trening zakończony")
+            
+        # ДОДАНО: Команда для повного закриття застосунку
+        elif "zamknij" in command or "wyłącz" in command:
+            self.state["is_training"] = False
+            self.state["quit"] = True
+            speak("System wyłączony")
             
         elif "ile powtórzeń" in command or "ile" in command:
             if self.state.get("is_training"):

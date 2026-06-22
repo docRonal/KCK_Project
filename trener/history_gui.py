@@ -4,14 +4,17 @@ from datetime import datetime
 import db_manager
 
 UNCHECKED = "☐"
-CHECKED = "☑"
-
+CHECKED = "☑" 
 class HistoryWindow(ctk.CTkToplevel):
     def __init__(self, master):
         super().__init__(master)
         self.title("TRAINING HISTORY")
         self.geometry("700x500")
         self.configure(fg_color="#121212")
+        
+        # --- Прив'язка до майстра і фокус поверх усього ---
+        self.transient(master)
+        self.attributes("-topmost", True)
         
         self.edit_mode = False
         
@@ -42,7 +45,7 @@ class HistoryWindow(ctk.CTkToplevel):
 
     def format_duration(self, total_seconds):
         minutes, seconds = divmod(total_seconds, 60)
-        return f"{minutes:02d}:{seconds:02d} хв"
+        return f"{minutes:02d}:{seconds:02d} min"
 
     def load_data(self):
         for item in self.tree.get_children():
